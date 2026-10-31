@@ -1,0 +1,51 @@
+_ > nanoagent.plugin.v0001.ManifestConfig:
+id: triage-similar-incidents
+name: Triage Similar Incidents
+version: 0.1.0
+status: ready
+spec: nanoagent.plugin/v0001
+
+runtime > nanoagent.plugin.v0001.RuntimeConfig:
+  type: mcp_stdio
+  command: [uv, run, --frozen, python, -m, plugin]
+
+permissions > nanoagent.plugin.v0001.PermissionsConfig:
+  network > nanoagent.plugin.v0001.NetworkConfig:
+    hosts: []
+  filesystem > nanoagent.plugin.v0001.FilesystemConfig:
+    write: [workspace]
+
+# One entry per contract.Tool; its input and output classes are contract.TOOLS's.
+tools > dict[contract.Tool, nanoagent.plugin.v0001.ToolConfig]:
+  generate_incidents:
+    description: Write a seeded history of past incidents to <destination>/incidents-<seed>-<count>.jsonl and 5 new incidents, each a reworded copy of one past incident, to <destination>/new-<seed>-<count>.jsonl
+  read_incident:
+    description: Read one incident's service, summary and resolution from an incident JSONL file by its id
+  find_similar:
+    description: Find the past incidents whose summaries share word 3-grams with a text, using MinHash signatures and LSH banding, then exact Jaccard similarity on the candidates
+
+# One entry per contract.Task; its input and output classes are contract.TASKS's.
+tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
+  generate-incidents:
+    description: Generate a seeded incident history
+    runner: tool
+    tools: [generate_incidents]
+    reference: null
+    instructions: Write the past incidents and the 5 new incidents for the seed and count into the destination folder and return both paths, the count and both SHA-256 hashes.
+  find-similar-incidents:
+    description: Find the past incidents similar to a text
+    runner: tool
+    tools: [find_similar]
+    reference: null
+    instructions: Cut the MinHash signature of the text's word 3-grams into bands of num_perm / bands values, take every past incident that shares a band with it as a candidate, and return the candidates whose exact Jaccard similarity is at least the threshold.
+  link-new-incident:
+    description: Link a new incident to its past near-duplicate and how that one was fixed
+    runner: agent
+    tools: [generate_incidents, read_incident, find_similar]
+    reference: null
+    instructions: |-
+      Generate the incident history for the seed and count with generate_incidents, destination incidents.
+      Read the new incident new_id from the new_file that generate_incidents returned, with read_incident.
+      Call find_similar on the incidents_file that generate_incidents returned, with text set to the new incident's summary, threshold 0.2, num_perm 128 and bands 32. Take the first match: it has the highest jaccard.
+      Read that past incident with read_incident on the incidents_file.
+      Submit incidents_file as generate_incidents returned it, new_id, match_id as the first match's id, jaccard as the first match's jaccard, and resolution exactly as read_incident returned it for the match.

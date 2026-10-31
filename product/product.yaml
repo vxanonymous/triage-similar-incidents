@@ -1,0 +1,11 @@
+_ > nanoagent.plugin.v0001.ProductConfig:
+tagline: "See how a new incident was fixed the last time it happened"
+summary: "Generates a seeded history of past incidents and a few new ones, then links each new incident to its near-duplicates in the history with MinHash signatures and LSH banding, so a responder can read how the same problem was resolved before."
+highlights:
+  - "Every reported similarity is the exact Jaccard of word 3-grams, recomputed by the verifier"
+  - "LSH banding checks only the incidents that share a band, so large histories stay fast"
+  - "Works offline: the same seed always gives the same incidents, byte for byte"
+steps:
+  - "Generate an incident history from a seed and a count"
+  - "Paste a new incident's summary and pick a threshold, signature length and band count"
+  - "Read the closest past incidents, or ask the agent to link a new incident and fetch its fix"
