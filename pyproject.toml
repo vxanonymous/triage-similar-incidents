@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nanoagent-triage-similar-incidents"
-version = "0.1.0"
+version = "0.1.1"
 description = "MinHash and LSH near-duplicate search over seeded incident histories: a NanoAgent plugin"
 requires-python = ">=3.12"
 dependencies = ["mcp>=1.27,<2", "slimconfig"]
